@@ -1,0 +1,17 @@
+# Agent Testing & Evaluation Framework
+# NOTE: This build uses the Claude Code CLI (`claude -p`) as the LLM inference
+# engine instead of the Anthropic HTTP API. The `anthropic` SDK is therefore
+# OPTIONAL and only listed for teams that later want to swap in an API backend.
+
+pydantic>=2.0.0            # Data validation & models
+pyyaml>=6.0               # Playbook parsing
+click>=8.1.0              # CLI framework
+rich>=13.0.0              # Beautiful terminal output
+jinja2>=3.1.0             # HTML report templating
+jsonschema>=4.20.0        # Playbook schema validation
+pytest>=7.4.0             # Unit testing
+pytest-asyncio>=0.21.0    # Async test support
+python-dotenv>=1.0.0      # Environment variable management
+
+# Optional — only if you switch LLMBackend to the HTTP API instead of the CLI:
+# anthropic>=0.40.0

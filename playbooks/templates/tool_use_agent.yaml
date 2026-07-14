@@ -1,0 +1,64 @@
+agent_id: tool-use-agent-template
+version: 0.1.0
+description: Template playbook for an agent whose primary job is calling tools/APIs.
+domain: general
+author: your-team
+
+rules:
+  - id: PB-001
+    name: Uses only allowed tools
+    description: Never calls forbidden tools; stays within the allowed set.
+    priority: critical
+    evaluation_type: deterministic
+    expected_behavior: All tool calls are in allowed_tools.
+    weight: 1.0
+  - id: PB-002
+    name: Correct tool selection
+    description: Chooses the right tool for the task and passes valid parameters.
+    priority: high
+    evaluation_type: hybrid
+    expected_behavior: Tool choice and parameters match the task.
+    weight: 0.8
+  - id: PB-003
+    name: No redundant tool calls
+    description: Avoids calling the same tool with identical params repeatedly.
+    priority: medium
+    evaluation_type: deterministic
+    expected_behavior: Each tool call adds new information.
+    weight: 0.5
+  - id: PB-004
+    name: Required tools used per task type
+    description: Calls the mandatory tools for the given task type.
+    priority: high
+    evaluation_type: deterministic
+    expected_behavior: Required tools appear in the trace.
+    weight: 0.7
+
+tool_constraints:
+  allowed_tools: [search, calculator, database_query]
+  forbidden_tools: [shell_exec]
+  max_tool_calls_per_task: 8
+  required_tools_for_task_types:
+    lookup: [search]
+    compute: [calculator]
+
+output_requirements:
+  format: json
+  required_fields: [answer, tools_used]
+  max_length: 3000
+  tone: technical
+
+performance_thresholds:
+  max_latency_seconds: 40.0
+  max_steps: 15
+  min_goal_achievement_rate: 0.75
+  max_hallucination_rate: 0.1
+
+test_scenarios:
+  - id: TS-001
+    name: Lookup task
+    prompt: "Find the population of France and double it."
+    expected_output_contains: ["france"]
+    difficulty: medium
+    tags: [tool, compute]
+    task_type: compute

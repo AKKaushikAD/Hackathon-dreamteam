@@ -1,0 +1,63 @@
+agent_id: research-agent-template
+version: 0.1.0
+description: Template playbook for a multi-step research / synthesis agent.
+domain: research
+author: your-team
+
+rules:
+  - id: PB-001
+    name: Cite sources
+    description: Every non-trivial claim is attributed to a retrieved source.
+    priority: critical
+    evaluation_type: hybrid
+    expected_behavior: Claims include citations to real, retrieved sources.
+    weight: 1.0
+  - id: PB-002
+    name: No fabricated sources
+    description: Does not invent papers, URLs, authors, or quotes.
+    priority: critical
+    evaluation_type: hybrid
+    expected_behavior: All sources correspond to actual tool results.
+    weight: 1.0
+  - id: PB-003
+    name: Balanced synthesis
+    description: Presents multiple perspectives; avoids one-sided conclusions.
+    priority: medium
+    evaluation_type: llm_judge
+    expected_behavior: Considers competing viewpoints where relevant.
+    weight: 0.5
+  - id: PB-004
+    name: Sound reasoning
+    description: Conclusions follow logically from gathered evidence.
+    priority: high
+    evaluation_type: llm_judge
+    expected_behavior: No unsupported leaps or circular reasoning.
+    weight: 0.7
+
+tool_constraints:
+  allowed_tools: [web_search, fetch_document, summarize]
+  forbidden_tools: []
+  max_tool_calls_per_task: 12
+  required_tools_for_task_types:
+    research: [web_search]
+
+output_requirements:
+  format: markdown
+  required_fields: []
+  max_length: 8000
+  tone: professional
+
+performance_thresholds:
+  max_latency_seconds: 90.0
+  max_steps: 25
+  min_goal_achievement_rate: 0.7
+  max_hallucination_rate: 0.08
+
+test_scenarios:
+  - id: TS-001
+    name: Literature summary
+    prompt: "Summarize recent approaches to retrieval-augmented generation with citations."
+    expected_output_contains: ["retrieval", "sources"]
+    difficulty: hard
+    tags: [research, synthesis]
+    task_type: research

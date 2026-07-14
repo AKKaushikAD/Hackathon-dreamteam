@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ATF Report Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{--teal:#1ea599;--blue:#3f8cff;--amber:#f5a623;--danger:#e74c3c;--success:#2ecc71;
+    --text:#e8f4f3;--muted:#7fa8a3;--card-bg:rgba(30,165,153,0.08);--card-border:rgba(30,165,153,0.25);}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:linear-gradient(135deg,#020d0c,#010808);color:var(--text);min-height:100vh;}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 80px;}
+  h1,h2,h3{font-weight:600;} h2{color:var(--teal);border-bottom:1px solid var(--card-border);padding-bottom:8px;margin-top:40px;}
+  .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:20px;margin:14px 0;}
+  .header{display:flex;align-items:center;gap:28px;flex-wrap:wrap;} .header .meta{flex:1;min-width:260px;}
+  .header .meta h1{margin:0 0 6px;font-size:26px;} .kv{color:var(--muted);font-size:14px;line-height:1.7;}
+  .kv b{color:var(--text);}
+  .ring-wrap{position:relative;width:160px;height:160px;} .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-score{font-size:34px;font-weight:700;} .ring-grade{font-size:14px;color:var(--muted);}
+  .banner{text-align:center;font-size:22px;font-weight:700;letter-spacing:2px;padding:18px;border-radius:14px;margin:18px 0;}
+  .banner.pass{background:rgba(46,204,113,0.14);border:1px solid var(--success);color:var(--success);}
+  .banner.cond{background:rgba(245,166,35,0.14);border:1px solid var(--amber);color:var(--amber);}
+  .banner.fail{background:rgba(231,76,60,0.14);border:1px solid var(--danger);color:var(--danger);}
+  .banner .sub{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:6px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;} @media(max-width:820px){.grid2{grid-template-columns:1fr;}}
+  table{width:100%;border-collapse:collapse;font-size:14px;} th,td{text-align:left;padding:10px 12px;border-bottom:1px solid rgba(30,165,153,0.12);}
+  th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:1px;}
+  .pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+  .pill.PASS{background:rgba(46,204,113,0.18);color:var(--success);} .pill.WARN{background:rgba(245,166,35,0.18);color:var(--amber);}
+  .pill.FAIL{background:rgba(231,76,60,0.18);color:var(--danger);}
+  .prio{font-size:11px;color:var(--muted);}
+  .bar-row{display:flex;align-items:center;gap:12px;margin:10px 0;} .bar-row .lbl{width:170px;font-size:13px;}
+  .bar-track{flex:1;height:12px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;transition:width 1s ease;} .bar-val{width:48px;text-align:right;}
+  .crit-card{border-left:4px solid var(--danger);background:rgba(231,76,60,0.08);} .crit-card .rid{color:var(--amber);font-weight:600;}
+  .acc{border:1px solid var(--card-border);border-radius:12px;margin:10px 0;overflow:hidden;}
+  .acc-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:rgba(30,165,153,0.06);}
+  .acc-head:hover{background:rgba(30,165,153,0.12);} .acc-head .grow{flex:1;}
+  .acc-body{display:none;padding:16px;border-top:1px solid var(--card-border);} .acc.open .acc-body{display:block;}
+  .chev{transition:transform .2s;color:var(--muted);} .acc.open .chev{transform:rotate(90deg);}
+  pre.out{background:#010e0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;overflow-x:auto;font-size:12.5px;color:#cfeae7;white-space:pre-wrap;}
+  .trace-step{display:flex;gap:10px;padding:8px 10px;border-radius:8px;margin:4px 0;background:rgba(255,255,255,0.03);}
+  .trace-step .ico{width:26px;text-align:center;} .trace-step .body{flex:1;font-size:13px;}
+  .trace-step .st{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .rec-card{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;margin:8px 0;background:rgba(30,165,153,0.10);border:1px solid var(--card-border);border-radius:10px;}
+  .rec-num{color:var(--teal);font-weight:700;font-size:18px;} .muted{color:var(--muted);} .small{font-size:12px;}
+  .metric-mini{font-size:12px;color:var(--muted);}
+  .drop{border:2px dashed var(--card-border);border-radius:14px;padding:40px;text-align:center;color:var(--muted);cursor:pointer;}
+  .drop:hover{border-color:var(--teal);color:var(--text);}
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="color:var(--teal)">Agent Testing &amp; Evaluation — Report Viewer</h1>
+  <p class="muted">Load a report JSON produced by <code>python main.py test ... --format json</code>.</p>
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="application/json,.json" />
+    Click or drop a report .json here
+  </label>
+  <div id="app"></div>
+</div>
+<script>
+const COLORS={teal:"#1ea599",blue:"#3f8cff",amber:"#f5a623",danger:"#e74c3c",success:"#2ecc71",muted:"#7fa8a3"};
+let REPORT=null;
+function scoreColor(s){if(s>=85)return COLORS.success;if(s>=70)return COLORS.amber;if(s>=60)return "#e8912a";return COLORS.danger;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function ring(score,grade){const r=64,c=2*Math.PI*r,off=c*(1-score/100),col=scoreColor(score);
+  return `<div class="ring-wrap"><svg width="160" height="160" viewBox="0 0 160 160">
+    <circle cx="80" cy="80" r="${r}" stroke="rgba(255,255,255,0.08)" stroke-width="12" fill="none"/>
+    <circle cx="80" cy="80" r="${r}" stroke="${col}" stroke-width="12" fill="none" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${c}" transform="rotate(-90 80 80)">
+      <animate attributeName="stroke-dashoffset" from="${c}" to="${off}" dur="1.2s" fill="freeze"/></circle></svg>
+    <div class="ring-label"><div class="ring-score" style="color:${col}">${score.toFixed(1)}</div>
+    <div class="ring-grade">grade ${esc(grade)}</div></div></div>`;}
+const STEP_ICONS={reasoning:"🧠",tool_call:"🔧",tool_result:"📥",memory_read:"📖",memory_write:"💾",output:"📤"};
+function traceView(trace){if(!trace)return "";
+  let steps=trace.steps.map(s=>{let extra="";
+    if(s.tool_name)extra+=`<div class="small muted">tool: ${esc(s.tool_name)} ${s.tool_params?esc(JSON.stringify(s.tool_params)):""}</div>`;
+    if(s.tool_result!=null)extra+=`<div class="small">→ ${esc(typeof s.tool_result==="string"?s.tool_result:JSON.stringify(s.tool_result)).slice(0,300)}</div>`;
+    return `<div class="trace-step"><div class="ico">${STEP_ICONS[s.step_type]||"•"}</div>
+      <div class="body"><div class="st">${esc(s.step_type)} · ${s.latency_ms.toFixed(0)}ms</div>
+      <div>${esc(s.content)}</div>${extra}</div></div>`;}).join("");
+  return `<div style="margin-top:10px"><div class="st muted small">Full trace (${trace.steps.length} steps)</div>${steps}</div>`;}
+function render(){
+  const s=REPORT.test_run_summary;
+  const v=s.verdict, cls=v==="PASS"?"pass":(v==="FAIL"?"fail":"cond");
+  let html=`<div class="card header">${ring(s.overall_score,s.grade)}<div class="meta">
+    <h1>Agent Evaluation Report</h1><div class="kv">
+    <div>Agent: <b>${esc(REPORT.agent_id)}</b></div>
+    <div>Playbook: <b>${esc(REPORT.playbook_version)}</b></div>
+    <div>Generated: <b>${esc(REPORT.generated_at)}</b></div>
+    <div>Cases: <b>${s.total_test_cases}</b> · pass <b style="color:${COLORS.success}">${s.passed}</b>
+      · warn <b style="color:${COLORS.amber}">${s.warnings}</b> · fail <b style="color:${COLORS.danger}">${s.failed}</b></div>
+    </div></div></div>`;
+  html+=`<div class="banner ${cls}">${esc(v)}</div>`;
+  html+=`<div class="grid2"><div class="card"><h3>Metric Radar</h3><canvas id="radar" height="300"></canvas></div>`;
+  let bars="";for(const [n,m] of Object.entries(REPORT.metric_scores)){const col=scoreColor(m.score);
+    bars+=`<div class="bar-row"><div class="lbl">${esc(n)} <span class="metric-mini">w=${m.weight}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${m.score}%;background:${col}"></div></div>
+      <div class="bar-val" style="color:${col}">${m.score.toFixed(1)}</div></div>`;}
+  html+=`<div class="card"><h3>Score Breakdown</h3>${bars}</div></div>`;
+  let rows="";for(const r of REPORT.playbook_rule_results){
+    let viol=r.violations.slice(0,3).map(x=>`<div class="small" style="color:${COLORS.danger}">• ${esc(x.description)} <span class="muted">(${esc(x.test_case_id)})</span></div>`).join("");
+    rows+=`<tr><td><span class="pill ${r.status}">${r.status}</span></td>
+      <td><b>${esc(r.rule_id)}</b><div class="prio">${esc(r.priority)}</div></td>
+      <td>${esc(r.rule_name)}${viol?`<div style="margin-top:6px">${viol}</div>`:""}</td>
+      <td style="text-align:right;color:${scoreColor(r.score)}">${r.score.toFixed(0)}</td></tr>`;}
+  html+=`<div class="card"><h3>Playbook Rules</h3><table><thead><tr><th>Status</th><th>Rule</th><th>Name / findings</th><th style="text-align:right">Score</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  if(REPORT.critical_violations.length){html+=`<h2>Critical Violations</h2>`+
+    REPORT.critical_violations.map(x=>`<div class="card crit-card"><div class="rid">${esc(x.rule_id||"—")} · ${esc(x.test_case_id)}</div><div>${esc(x.description)}</div></div>`).join("");}
+  else html+=`<div class="card"><h3>Critical Violations</h3><div class="muted">None.</div></div>`;
+  html+=`<h2>Test Case Results</h2>`+REPORT.test_case_results.map((r,i)=>{
+    let mr=Object.entries(r.metrics).map(([n,m])=>`<div class="bar-row"><div class="lbl small">${esc(n)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${m.score}%;background:${scoreColor(m.score)}"></div></div>
+      <div class="bar-val small" style="color:${scoreColor(m.score)}">${m.score.toFixed(0)}</div></div>`).join("");
+    let tr=r.trace||(REPORT.traces||[]).find(t=>t.test_case_id===r.test_case_id);
+    return `<div class="acc" id="acc${i}"><div class="acc-head" onclick="document.getElementById('acc${i}').classList.toggle('open')">
+      <span class="chev">▶</span><span class="pill ${r.status}">${r.status}</span>
+      <span class="grow"><b>${esc(r.test_case_id)}</b> — ${esc(r.name)}</span>
+      <span style="color:${scoreColor(r.weighted_score)}">${r.weighted_score.toFixed(1)}</span></div>
+      <div class="acc-body"><div class="small muted">Prompt</div><pre class="out">${esc(r.prompt)}</pre>
+      <div class="small muted">Output</div><pre class="out">${esc(r.output)}</pre>
+      <div class="small muted" style="margin-top:10px">Per-metric</div>${mr}${traceView(tr)}</div></div>`;}).join("");
+  html+=`<h2>Executive Summary</h2><div class="card">${esc(REPORT.executive_summary||"(none)")}</div>`;
+  html+=`<h2>Recommendations</h2>`+(REPORT.recommendations||[]).map((r,i)=>`<div class="rec-card"><div class="rec-num">${i+1}</div><div>${esc(r)}</div></div>`).join("");
+  document.getElementById("app").innerHTML=html;
+  const labels=Object.keys(REPORT.metric_scores),values=labels.map(l=>REPORT.metric_scores[l].score);
+  new Chart(document.getElementById("radar"),{type:"radar",
+    data:{labels,datasets:[{label:"Score",data:values,backgroundColor:"rgba(30,165,153,0.25)",borderColor:COLORS.teal,pointBackgroundColor:COLORS.blue,borderWidth:2}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,
+      angleLines:{color:"rgba(255,255,255,0.08)"},grid:{color:"rgba(255,255,255,0.08)"},
+      pointLabels:{color:"#e8f4f3",font:{size:11}},ticks:{color:"#7fa8a3",backdropColor:"transparent",stepSize:20}}}}});
+}
+function load(text){try{REPORT=JSON.parse(text);render();}catch(e){alert("Invalid JSON: "+e);}}
+const fileInput=document.getElementById("file");
+fileInput.addEventListener("change",e=>{const f=e.target.files[0];if(f){const rd=new FileReader();rd.onload=()=>load(rd.result);rd.readAsText(f);}});
+const drop=document.getElementById("drop");
+drop.addEventListener("dragover",e=>{e.preventDefault();});
+drop.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f){const rd=new FileReader();rd.onload=()=>load(rd.result);rd.readAsText(f);}});
+</script>
+</body>
+</html>

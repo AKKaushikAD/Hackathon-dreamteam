@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MASTER PLAYBOOK SCHEMA (reference)
+# This file documents the canonical shape of a playbook. The authoritative,
+# machine-enforced schema lives in core/playbook_loader.py (Pydantic models).
+# Validate any playbook with:  python main.py validate-playbook --playbook <f>
+# ─────────────────────────────────────────────────────────────────────────────
+
+agent_id: string                     # REQUIRED. Unique agent identifier.
+version: string                      # Semver version (default "0.1.0").
+description: string                  # What this agent does.
+domain: string                       # e.g. cybersecurity, finance, HR.
+created_at: string                   # ISO8601 date.
+author: string
+
+# Behavioral constraints the agent MUST follow.
+rules:
+  - id: string                       # e.g. PB-001
+    name: string                     # Human-readable rule name.
+    description: string              # Detailed description.
+    priority: critical|high|medium|low
+    evaluation_type: deterministic|llm_judge|hybrid
+    check_method: string             # How compliance is verified.
+    expected_behavior: string        # What passing looks like.
+    failure_examples: [string]       # Examples of violations.
+    weight: float                    # 0.0 to 1.0 scoring weight.
+
+# Expected tool usage patterns.
+tool_constraints:
+  allowed_tools: [string]
+  forbidden_tools: [string]
+  max_tool_calls_per_task: int
+  required_tools_for_task_types:
+    <task_type>: [required_tool_names]
+
+# Output format requirements.
+output_requirements:
+  format: json|markdown|html|plain_text
+  schema: object                     # JSON schema when format == json.
+  required_fields: [string]
+  max_length: int
+  tone: professional|casual|technical
+
+# Performance thresholds.
+performance_thresholds:
+  max_latency_seconds: float
+  max_steps: int
+  min_goal_achievement_rate: float   # 0.0 to 1.0
+  max_hallucination_rate: float      # 0.0 to 1.0
+
+# Test scenario templates for this agent.
+test_scenarios:
+  - id: string
+    name: string
+    prompt: string
+    expected_output_contains: [string]
+    expected_output_excludes: [string]
+    difficulty: easy|medium|hard|adversarial
+    tags: [string]
+    task_type: string                # optional; keys into required_tools_for_task_types

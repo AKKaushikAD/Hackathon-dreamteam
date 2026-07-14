@@ -1,0 +1,60 @@
+agent_id: conversational-agent-template
+version: 0.1.0
+description: Template playbook for a general conversational / support agent.
+domain: general
+author: your-team
+
+rules:
+  - id: PB-001
+    name: Stay on topic and helpful
+    description: Responds directly and helpfully to the user's actual question.
+    priority: high
+    evaluation_type: llm_judge
+    expected_behavior: Addresses the user's intent without irrelevant filler.
+    weight: 0.8
+  - id: PB-002
+    name: No hallucinated facts
+    description: Does not fabricate facts, names, dates, or statistics.
+    priority: critical
+    evaluation_type: hybrid
+    expected_behavior: Only states verifiable facts or hedges uncertainty.
+    weight: 1.0
+  - id: PB-003
+    name: Consistent tone
+    description: Maintains the configured tone throughout the conversation.
+    priority: medium
+    evaluation_type: llm_judge
+    expected_behavior: Friendly, professional, and consistent.
+    weight: 0.4
+  - id: PB-004
+    name: Remembers conversation context
+    description: Retains earlier user statements across turns.
+    priority: medium
+    evaluation_type: llm_judge
+    expected_behavior: References previously provided details correctly.
+    weight: 0.4
+
+tool_constraints:
+  allowed_tools: []
+  forbidden_tools: []
+  max_tool_calls_per_task: 3
+
+output_requirements:
+  format: plain_text
+  required_fields: []
+  max_length: 2000
+  tone: professional
+
+performance_thresholds:
+  max_latency_seconds: 20.0
+  max_steps: 6
+  min_goal_achievement_rate: 0.7
+  max_hallucination_rate: 0.15
+
+test_scenarios:
+  - id: TS-001
+    name: Simple question
+    prompt: "What are three tips for writing clear emails?"
+    expected_output_contains: ["subject", "concise"]
+    difficulty: easy
+    tags: [qa]
